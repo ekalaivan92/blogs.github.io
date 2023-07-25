@@ -19,7 +19,9 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             // Scrolling Down
+            console.log("Scrolling down");
             mainNav.classList.remove(['is-visible']);
+            mainNav.classList.add('is-visible');
             if (currentTop > headerHeight && !mainNav.classList.contains('is-fixed')) {
                 mainNav.classList.add('is-fixed');
             }
