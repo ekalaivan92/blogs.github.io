@@ -1,0 +1,313 @@
+---
+title: "Reading Postgresql JSONB to DotNet Complex Types Using Dapper"
+date: 2023-08-29T22:02:39+05:30
+draft: false
+url: "reading-postgresql-jsonb-to-dotnet-complex-types"
+aliases: "reading-postgresql-jsonb-to-dotnet-complex-types.html"
+slug: "reading-postgresql-jsonb-to-dotnet-complex-types"
+description: "In many cases we might want to maintain the data in single
+column as JSON. For example a API response from any of the
+services like payment responses from payment gateway..."
+---
+
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a class="text-reset" href="/">Home</a></li>
+  
+    <li class="breadcrumb-item active" aria-current="page">Reading Postgresl JSONB with Dapper into DotNet Complex Types</li>
+  </ol>
+</nav>
+
+<div class="page-body">
+
+  <h2 class="mt-3">Introduction</h2>
+  
+  <p>
+    As we are writing business / utility applications sometimes we need to 
+    store complex types directly in the database as a column in a format of 
+    bytes, xml, json, etc..,. Here I am going to explain how to as a json 
+    data inside postgresql database.
+  </p>
+  
+  <h2 class="mt-3">What is JSON / JSONB in PostgreSQL</h2>
+  
+  <p>
+    It is a datatype, a representation of JSON data in the
+    PostgreSQL database. JSON and JSONB both are used to store
+    JSON data. Here JSONB datatype has more validation and data
+    accessing techniques / methods. For more details check
+    <a href="https://www.postgresql.org/docs/current/datatype-json.html">here</a>.
+  </p>
+  
+  <p>
+    In many cases we might want to maintain the data in single
+    column as JSON. For example a API response from any of the
+    services like payment responses from payment gateway. These
+    data information not really need to be presented in the
+    traditional way of keeping columns for each detail, because of
+    it will increase the table count and complexity of the
+    database.
+  </p>
+  
+  <h3 class="mt-3">JSONB with Dapper</h3>
+ 
+  <p>
+    using JSONB directly because it is more advanced then JSON in
+    PostgreSQL environment.
+  </p>
+  
+  <p>
+    Storing / accessing the JSONB data from the database is not
+    simple as I thought of initially. Because of that complexity,
+    Initially I used string in DotNet side and JSONB in database
+    side. For this I need to serialize the data to string when I
+    am going to store it, and do the deserialization when I want
+    it. In the search of solution for this problem I found that I
+    can use Type handlers of Dapper to solve this problem. This
+    idea found from
+    <a href="https://medium.com/dapper-net/custom-type-handling-4b447b97c620">this blog</a>.
+  </p>
+
+  <h3 class="mt-3"><strong>What is Type Handlers</strong></h3>
+  
+  <p>
+    This is a concept given by Dapper to handle custom types, Type
+    Handlers allow database types to be converted to DotNet custom
+    types like class, dictionary, etc.
+  </p>
+
+  <h3 class="mt-3">Defining Type Handler</h3>
+  
+  <p>
+    To define the type handler we have to inherit base class
+    <code>TypeHandler&lt;T&gt;</code> and implement the
+    <code>Parse</code> and <code>SetValue</code> methods.
+  </p>
+  
+  <ul class="bulleted-list">
+    <li>
+      <strong>Parse: </strong> Used to parse the column
+      value to DotNet type while reading
+      from DB
+    </li>
+
+    <li>
+      <strong>SetValue: </strong> Used
+      to set the value to the column parameter when storing
+      it (insert / update).
+    </li>
+  </ul>
+  
+  <p>
+    Here I am using <code>PaymentResponse</code> class as the C#
+    representation of the data stored in the payment history table
+    with column name <code>paymentgatewayresponse</code>. Not
+    important and Assume that the class has some properties like
+    paid amount, payment type, payment started at, ended at,
+    etc..,
+  </p>
+  
+  <p>
+    Type Handler for the specific Type
+    <code>PaymentRespose</code> is
+    <code>PaymentResponseJsonBTypeHandler</code>, The
+    implementation will be
+  </p>
+  
+  <pre lang="language-cs" class="rounded">
+    <code>
+public class PaymentResponseJsonBTypeHandler : TypeHandler&lt;PaymentResponse&gt;
+{
+  public override T Parse(object value)
+  {
+    if (value == null || value == DBNull.Value)
+    {
+      return default;
+    }
+
+    // I used newtonsoft json serializer here
+    return JsonConvert.DeserializeObject&lt;PaymentResponse&gt;(value.ToString());
+  }
+
+  public override void SetValue(IDbDataParameter parameter, PaymentResponse value)
+  {
+    // I used newtonsoft json serializer here
+    parameter.Value = JsonConvert.SerializeObject(value);
+
+    //Here we have to use different type settings for the desired database
+    //I am using postgresql so the NpgsqlDbType enum used.
+    if (parameter is NpgsqlParameter npgsqlParameter)
+    {
+      npgsqlParameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
+    }
+  }
+}</code>
+  </pre>
+
+  <p>
+    Once I defined the type handler for the type then I have to
+    tell the dapper to use it, For that I have to register it
+  </p>
+
+  <pre lang="language-cs" class="rounded">
+    <code>
+var paymentReposenseTypeHandlerInstance = new PaymentResponseJsonBTypeHandler();
+SqlMapper.AddTypeHandler(paymentReposenseTypeHandlerInstance);</code>
+  </pre>
+  
+  <p>
+    In this approach, I have to register each one type separately
+    like above which all are going to be used to read data from
+    the database. It won't helpful. so I tried to find the best
+    way, Our friend Generics can help here. Means if I make the
+    Type handler as generic then the problem half solved, so the
+    changed code will looks like
+  </p>
+  
+  <pre lang="language-cs" class="rounded">
+    <code>
+public class JsonBTypeHandler&lt;T&gt; : TypeHandler&lt;T&gt;
+{
+  public override T Parse(object value)
+  {
+    if (value == null || value == DBNull.Value)
+    {
+      return default;
+    }
+
+    // I used newtonsoft json serializer here
+    return JsonConvert.DeserializeObject&lt;T&gt;(value.ToString());
+  }
+
+  public override void SetValue(IDbDataParameter parameter, T value)
+  {
+    // I used newtonsoft json serializer here
+    parameter.Value = JsonConvert.SerializeObject(value);
+
+    //Here we have to use different type settings for the desired database
+    //I am using postgresql so the NpgsqlDbType enum used.
+    if (parameter is NpgsqlParameter npgsqlParameter)
+    {
+      npgsqlParameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
+    }
+  }
+}</code>
+  </pre>
+
+  <p>
+    To register the type handler for all types, again I need to do
+    the same, It can be solved by may ways I took inheritance with
+    a common Interface. So whoever, inheriting the interface can
+    simply be a type that can be used to Hold data of JSONB
+  </p>
+
+  <pre lang="language-cs" class="rounded">
+    <code>
+public interface IJsonBData { }</code>
+  </pre>
+  
+  <p>
+    Once I created this, Then the JSONB type handler can be
+    registered for all types by who inherits
+    <code>IJsonBData</code> interface by
+  </p>
+
+  <pre lang="language-cs" class="rounded">
+    <code>
+//Collecting all types who has inherited from IJSonBData
+var executingAssemblyTypes = Assembly
+  .GetExecutingAssembly()
+  .GetTypes()
+  .Where(t =&gt; t.IsClass &amp;&amp; !t.IsAbstract &amp;&amp; typeof(IJsonBData).IsAssignableFrom(t));
+
+//Registering All type handlers to the Dapper
+foreach (var type in executingAssemblyTypes)
+{
+  var genericType = typeof(JsonBTypeHandler&lt;&gt;).MakeGenericType(type);
+  var instance = (ITypeHandler)Activator.CreateInstance(genericType);
+  AddTypeHandler(type, instance);
+}</code>
+  </pre>
+
+  <p>
+    The <code>PaymentResponse</code> class will looks like
+  </p>
+
+  <pre lang="language-cs" class="rounded">
+    <code>
+public class PaymentResponse : IJsonBData
+{
+  //All available paramters
+}</code>
+  </pre>
+
+  <p>
+    Now, I can read the Payment Response from history table as
+    whole entity.
+  </p>
+
+  <pre lang="language-cs" class="rounded">
+    <code>
+dbConnectionInstance.Query&lt;PaymentHistory&gt;(&quot;select * from paymenthistory&quot;)</code>
+  </pre>
+  <p>Or, I can read only the JSONB content,</p>
+
+  <pre lang="language-cs" class="rounded">
+    <code>
+// Reading all
+dbConnectionInstance.Query&lt;PaymentResponse&gt;(&quot;select paymentgatewayresponse from paymenthistory&quot;)
+
+//Reading One Row
+dbConnectionInstance.QueryOne&lt;PaymentResponse&gt;(&quot;select paymentgatewayresponse from paymenthistory limit 1&quot;)</code>
+  </pre>
+
+  <p>
+    Or, I can read the required individual value, This is not
+    related to the Handler
+  </p>
+
+  <pre lang="language-cs" class="rounded">
+    <code>
+var query = &quot;select (paymentgatewayresponse -&gt;&gt; &#x27;PaidAmount&#x27;)::numeric from paymenthistory&quot;;
+dbConnectionInstance.Query&lt;decimal&gt;(query)</code>
+  </pre>
+
+  <h3 class="mt-3">Reading the JSONB into Dictionary</h3>
+
+  <p>
+    This is only possible to have when we have a type that
+    inherits from dictionary and <code>IJsonBData</code>. or
+    register the dictionary directly to the Dapper. something like
+  </p>
+
+  <pre lang="language-cs" class="rounded">
+    <code>
+SqlMapper.AddTypeHandler(typeof(Dictionary&lt;string, string&gt;), new Dictionary&lt;string, string&gt;());</code>
+  </pre>
+  
+  <h3 class="mt-3">Conclusion</h3>
+
+  <p>
+    Here I have explained about how I solved my problem of reading
+    a JSONB content from PostgreSQL into dotnet complex type or A
+    property of a class / entity. It is possible to have a single
+    entity / table / class having multiple JSONB data. This still
+    will work. Also it will handle the situation of list of entity
+    stored in the column.
+  </p>
+
+  <p>Thank you…</p>
+
+  <hr class="my-4" />
+
+  <p><strong>Written On : July 25th 2023</strong></p>
+</div>
+
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a class="text-reset" href="/">
+      <span class="fa fa-caret-left fa-1x"></span>
+      Back to Home
+    </a></li>
+  </ol>
+</nav>

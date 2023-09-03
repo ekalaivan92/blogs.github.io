@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+    {{ partial "head.html" . }}
+    <body>
+        <div id="home" class="home">
+          {{ partial "header.html" . }}
+          <div class="fs-5 container text-secondary mt-4" style="background-color: whitesmoke;">
+              <div class="row">
+                <div class="col-12">
+                  {{- block "content" . }}{{ end }}
+                </div>
+              </div>
+          </div>
+        </div>
+        {{ partial "footer.html" .}}
+    </body>
+</html>
