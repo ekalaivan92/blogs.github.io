@@ -115,7 +115,7 @@ services like payment responses from payment gateway..."
   </p>
   
   <pre lang="language-cs" class="rounded">
-    <code>
+    <code class="language-cs">
 public class PaymentResponseJsonBTypeHandler : TypeHandler&lt;PaymentResponse&gt;
 {
   public override T Parse(object value)
@@ -150,7 +150,7 @@ public class PaymentResponseJsonBTypeHandler : TypeHandler&lt;PaymentResponse&gt
   </p>
 
   <pre lang="language-cs" class="rounded">
-    <code>
+    <code class="language-cs">
 var paymentReposenseTypeHandlerInstance = new PaymentResponseJsonBTypeHandler();
 SqlMapper.AddTypeHandler(paymentReposenseTypeHandlerInstance);</code>
   </pre>
@@ -165,7 +165,7 @@ SqlMapper.AddTypeHandler(paymentReposenseTypeHandlerInstance);</code>
   </p>
   
   <pre lang="language-cs" class="rounded">
-    <code>
+    <code class="language-cs">
 public class JsonBTypeHandler&lt;T&gt; : TypeHandler&lt;T&gt;
 {
   public override T Parse(object value)
@@ -202,7 +202,7 @@ public class JsonBTypeHandler&lt;T&gt; : TypeHandler&lt;T&gt;
   </p>
 
   <pre lang="language-cs" class="rounded">
-    <code>
+    <code class="language-cs">
 public interface IJsonBData { }</code>
   </pre>
   
@@ -213,7 +213,7 @@ public interface IJsonBData { }</code>
   </p>
 
   <pre lang="language-cs" class="rounded">
-    <code>
+    <code class="language-cs">
 //Collecting all types who has inherited from IJSonBData
 var executingAssemblyTypes = Assembly
   .GetExecutingAssembly()
@@ -234,7 +234,7 @@ foreach (var type in executingAssemblyTypes)
   </p>
 
   <pre lang="language-cs" class="rounded">
-    <code>
+    <code class="language-cs">
 public class PaymentResponse : IJsonBData
 {
   //All available paramters
@@ -247,13 +247,13 @@ public class PaymentResponse : IJsonBData
   </p>
 
   <pre lang="language-cs" class="rounded">
-    <code>
+    <code class="language-cs">
 dbConnectionInstance.Query&lt;PaymentHistory&gt;(&quot;select * from paymenthistory&quot;)</code>
   </pre>
   <p>Or, I can read only the JSONB content,</p>
 
   <pre lang="language-cs" class="rounded">
-    <code>
+    <code class="language-cs">
 // Reading all
 dbConnectionInstance.Query&lt;PaymentResponse&gt;(&quot;select paymentgatewayresponse from paymenthistory&quot;)
 
@@ -267,7 +267,7 @@ dbConnectionInstance.QueryOne&lt;PaymentResponse&gt;(&quot;select paymentgateway
   </p>
 
   <pre lang="language-cs" class="rounded">
-    <code>
+    <code class="language-cs">
 var query = &quot;select (paymentgatewayresponse -&gt;&gt; &#x27;PaidAmount&#x27;)::numeric from paymenthistory&quot;;
 dbConnectionInstance.Query&lt;decimal&gt;(query)</code>
   </pre>
@@ -281,7 +281,7 @@ dbConnectionInstance.Query&lt;decimal&gt;(query)</code>
   </p>
 
   <pre lang="language-cs" class="rounded">
-    <code>
+    <code class="language-cs">
 SqlMapper.AddTypeHandler(typeof(Dictionary&lt;string, string&gt;), new Dictionary&lt;string, string&gt;());</code>
   </pre>
   

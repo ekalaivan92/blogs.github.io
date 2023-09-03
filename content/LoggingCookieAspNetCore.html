@@ -98,15 +98,15 @@ immediately after the first request to the same URI..."
     </ul>
 
     <p>
-        We have used <code>RedirectToAccessDenied</code>, <code>SignedIn</code>,<code>SigningIn</code> events.
+        We have used <code>Redirect To Access Denied</code>, <code> Signed In</code>, <code> Signing In</code> events.
     </p>
     
     <p>
-        Finally Our <code>CookieAuthenticationEvents</code> class looks like this
+        Finally Our <code>Cookie Authentication Events</code> class looks like this
     </p>
 
     <pre lang="language-cs" class="rounded">
-        <code>
+        <code class="language-cs">
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Threading.Tasks;
@@ -132,7 +132,7 @@ namespace Web
         public override Task SignedIn(CookieSignedInContext context)
         {            
             //Logging The Required Details
-            //Generated new cookie informations available here. In the request Body. 
+            //Generated new cookie information available here. In the request Body. 
             // Request available in the HttpContext. `context.HttpContext.Request`
             return base.SigningIn(context);
         }
@@ -149,7 +149,7 @@ namespace Web
     </p>
 
     <pre lang="language-cs" class="rounded">
-        <code>
+        <code class="language-cs">
 public void ConfigureServices(IServiceCollection services)
 {
     ...
@@ -170,7 +170,7 @@ public void ConfigureServices(IServiceCollection services)
     </p>
 
     <pre lang="language-cs" class="rounded">
-        <code>
+        <code class="language-cs">
 public void ConfigureServices(IServiceCollection services)
 {
     ...
@@ -198,7 +198,7 @@ public void ConfigureServices(IServiceCollection services)
     </p>
 
     <pre lang="language-cs" class="rounded">
-        <code>
+        <code class="language-cs">
 using System.Threading.Tasks;
 
 namespace Web
@@ -235,7 +235,7 @@ namespace Web
     </p>
 
     <pre lang="language-cs" class="rounded">
-        <code>
+        <code class="language-cs">
 public static class MiddlewareExtensions
 {
     public static IApplicationBuilder UseMyCookieLogMiddleware(this IApplicationBuilder instance)
@@ -250,7 +250,7 @@ public static class MiddlewareExtensions
     </p>
 
     <pre lang="language-cs" class="rounded">
-        <code>
+        <code class="language-cs">
 public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 {
     ...
@@ -262,8 +262,8 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerF
     </pre>
     
     <p>
-        This cookie logging middleware should be presented between <code>UseAuthentication</code>
-        / <code>UseAuthorization</code> and <code>UseMvc</code> middleware definitions.
+        This cookie logging middleware should be presented between <code>Use Authentication</code>
+        / <code>Use Authorization</code> and <code>UseMvc</code> middleware definitions.
     </p>
 
     <p>
