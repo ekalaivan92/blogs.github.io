@@ -5,7 +5,7 @@
     <title>Ekalaivan Chidambaram Blogs - {{ .Params.title }}</title>
 
     <meta key="description" content="{{ .Params.description }}" />
-    <meta name="keywords" content="{{ delimit .Params.keywords "," }}" />
+    {{ with .Params.keywords }}<meta name="keywords" content="{{ delimit . "," }}" />{{ end }}
   
     <meta property="og:title" content="Ekalaivan Chidambaram Blogs - {{ .Params.title }}">
     <meta property="og:description" content="{{ .Params.description }}">
